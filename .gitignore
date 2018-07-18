@@ -1,0 +1,41 @@
+*.class
+target
+/bin/
+/.settings/
+.project
+.classpath
+
+# Package Files
+*.jar
+*.war
+*.ear
+*.zip
+
+# Serverless files
+.serverless
+npm-debug.log
+
+# Node directories
+node_modules/
+
+# Decrypted files
+
+native-libs/
+favourite-braze/nbproject/
+nb-configuration.xml
+
+### Python ###
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+#serverless nodejs lock
+package-lock.json
+
+#temp directory
+temp/
+
+# vim swap files
+*.swp
+

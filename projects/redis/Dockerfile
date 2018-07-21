@@ -29,6 +29,7 @@ RUN set -exo pipefail \
 && make install \
 && cp redis.conf /etc/redis.conf \
 && sed -i -e 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis.conf \
+&& sed -i -e 's/protected-mode yes/protected-mode no/' /etc/redis.conf \
 && adduser -D redis \
 && apk del .build-deps \
 && rm -rf /tmp/*

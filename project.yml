@@ -165,6 +165,18 @@ objects:
         name: rubyharu-8080
       selector:
         deploymentConfig: rubyharu
-
-
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      labels:
+        application: rubyharu
+      name: rubyharu
+    spec:
+      port:
+        targetPort: rubyharu-8080
+      to:
+        kind: Service
+        name: rubyharu
+        weight: 100
+      wildcardPolicy: None
 

@@ -9,6 +9,7 @@ WORKDIR /data
 COPY filesystem /
 
 ENV REDIS_VERSION=4.0.10
+ENV REDIS_PASSWORD default-password
 
 RUN set -exo pipefail \
 && apk add --no-cache --virtual .build-deps \
@@ -32,5 +33,5 @@ RUN set -exo pipefail \
 && apk del .build-deps \
 && rm -rf /tmp/*
 
-CMD ["redis-server", "/etc/redis.conf"]
+CMD ["redis-server", "/etc/redis.conf", "--requirepass", "\"$REDIS_PASSWORD\""]
 

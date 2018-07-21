@@ -199,14 +199,11 @@ objects:
       selector:
         deploymentConfig: redisharu
       strategy:
-        type: Custom
-        customParams:
-          image: redisharu/latest
-          command:
-            - "redis-server"
-            - "/etc/redis.conf"
-            - "--requirepass"
-            - "\"$REDIS_PASSWORD\""
+        activeDeadlineSeconds: 21600
+        recreateParams:
+          timeoutSeconds: 600
+        resources: {}
+        type: Recreate
       template:
         metadata:
           labels:
@@ -230,6 +227,20 @@ objects:
               volumeMounts:
                 - mountPath: /data
                   name: redis-data
+              readinessProbe:
+                exec:
+                  command:
+                    - /bin/sh
+                    - '-i'
+                    - '-c'
+                    - >-
+                      test "$(redis-cli -h 127.0.0.1 -a crap ping)" ==
+                      "PONG"
+                failureThreshold: 3
+                initialDelaySeconds: 5
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
           restartPolicy: Always
           dnsPolicy: ClusterFirst
           volumes:

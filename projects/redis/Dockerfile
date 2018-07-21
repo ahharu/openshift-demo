@@ -33,5 +33,4 @@ RUN set -exo pipefail \
 && apk del .build-deps \
 && rm -rf /tmp/*
 
-CMD ["redis-server", "/etc/redis.conf", "--requirepass", "\"$REDIS_PASSWORD\""]
-
+CMD ["sh", "-c", "exec redis-server --requirepass \"$REDIS_PASSWORD\""]

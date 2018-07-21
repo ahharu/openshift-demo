@@ -131,6 +131,8 @@ objects:
                   value: '127.0.0.1'
                 - name: REDIS_PORT
                   value: '6379'
+                - name: REDIS_PASSWORD
+                  value: 'default-password'
               ports:
                 - name: rubyharu-http
                   containerPort: 4567
@@ -234,7 +236,7 @@ objects:
                     - '-i'
                     - '-c'
                     - >-
-                      test "$(redis-cli -h 127.0.0.1 -a crap ping)" ==
+                      test "$(redis-cli -h 127.0.0.1 -a default-password ping)" ==
                       "PONG"
                 failureThreshold: 3
                 initialDelaySeconds: 5

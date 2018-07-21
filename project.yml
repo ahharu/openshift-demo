@@ -94,4 +94,63 @@ objects:
       creationTimestamp:
       name: ruby-build-trigger
     type: Opaque
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: rubyharu
+      labels:
+        deploymentConfig: rubyharu
+        application: rubyharu
+    spec:
+      replicas: 2
+      selector:
+        deploymentConfig: rubyharu
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            deploymentConfig: rubyharu
+            application: rubyharu
+          name: rubyharu
+        spec:
+          containers:
+            - name: rubyharu
+              image: rubyharu
+              imagePullPolicy: Always
+              env:
+                - name: REDIS_HOST
+                  value: '127.0.0.1'
+                - name: REDIS_PORT
+                  value: '6379'
+              ports:
+                - name: rubyharu-http
+                  containerPort: 4567
+                  protocol: TCP
+              resources: {}
+              terminationMessagePath: "/dev/termination-log"
+              securityContext:
+                capabilities: {}
+                privileged: false
+          restartPolicy: Always
+          dnsPolicy: ClusterFirst
+      triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+          - rubyharu
+          from:
+            kind: ImageStreamTag
+            name: rubyharu:latest
+      - type: ConfigChange
+
 

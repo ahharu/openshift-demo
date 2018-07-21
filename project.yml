@@ -256,3 +256,16 @@ objects:
             kind: ImageStreamTag
             name: redisharu:latest
       - type: ConfigChange
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: redisharu
+      labels:
+        application: redisharu
+    spec:
+      ports:
+      - port: 6379
+        targetPort: 6379
+        name: rubyharu-6379
+      selector:
+        deploymentConfig: rubyharu

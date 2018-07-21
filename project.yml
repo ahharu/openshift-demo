@@ -179,4 +179,69 @@ objects:
         name: rubyharu
         weight: 100
       wildcardPolicy: None
+  - apiVersion: v1
+    stringData:
+      databse-password: larinaga
+    kind: Secret
+    metadata:
+      name: redis
+    type: Opaque
 
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: redisharu
+      labels:
+        deploymentConfig: redisharu
+        application: redisharu
+    spec:
+      replicas: 1
+      selector:
+        deploymentConfig: redisharu
+      strategy:
+        type: Custom
+        customParams:
+          image: redisharu/latest
+          command:
+            - "redis-server"
+            - "/etc/redis.conf"
+            - "--requirepass"
+            - "\"$REDIS_PASSWORD\""
+      template:
+        metadata:
+          labels:
+            deploymentConfig: redisharu
+            application: redisharu
+          name: redisharu
+        spec:
+          containers:
+            - name: redisharu
+              image: redisharu
+              imagePullPolicy: Always
+              ports:
+                - name: redisharu-port
+                  containerPort: 6379
+                  protocol: TCP
+              resources: {}
+              terminationMessagePath: "/dev/termination-log"
+              securityContext:
+                capabilities: {}
+                privileged: false
+              volumeMounts:
+                - mountPath: /data
+                  name: redis-data
+          restartPolicy: Always
+          dnsPolicy: ClusterFirst
+          volumes:
+            - emptyDir: {}
+              name: redis-data
+      triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+          - redisharu
+          from:
+            kind: ImageStreamTag
+            name: redisharu:latest
+      - type: ConfigChange

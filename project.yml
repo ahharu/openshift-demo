@@ -152,5 +152,19 @@ objects:
             kind: ImageStreamTag
             name: rubyharu:latest
       - type: ConfigChange
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: rubyharu
+      labels:
+        application: rubyharu
+    spec:
+      ports:
+      - port: 4567
+        targetPort: 4567
+        name: rubyharu-8080
+      selector:
+        deploymentConfig: rubyharu
+
 
 

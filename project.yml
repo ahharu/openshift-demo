@@ -33,10 +33,65 @@ objects:
       strategy:
         type: Docker
         dockerStrategy:
+      triggers:
+        - github:
+            secretReference:
+              name: redis-build-trigger
+          type: GitHub
       output:
         to:
           kind: ImageStreamTag
           name: redisharu:latest
       resources: {}
-    status:
-      lastVersion: 0
+  - apiVersion: v1
+    data:
+      WebHookSecretKey: MWUyNzY0ZDAxYjQ2ODQxOQ==
+    kind: Secret
+    metadata:
+      creationTimestamp:
+      name: redis-build-trigger
+    type: Opaque
+  - apiVersion: v1
+    kind: ImageStream
+    metadata:
+      creationTimestamp:
+      generation: 1
+      labels:
+        app: rubyharu
+      name: rubyharu
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: ruby-build
+      creationTimestamp:
+      labels:
+        name: ruby-build
+    spec:
+      source:
+        type: Git
+        git:
+          uri: git://github.com/ahharu/openshift-demo
+          ref: master
+        contextDir: projects/ruby-app
+      strategy:
+        type: Docker
+        dockerStrategy:
+      triggers:
+        - github:
+            secretReference:
+              name: ruby-build-trigger
+          type: GitHub
+      output:
+        to:
+          kind: ImageStreamTag
+          name: rubyharu:latest
+      resources: {}
+  - apiVersion: v1
+    data:
+      WebHookSecretKey: MWUyNzY0ZDAxYjQ2ODQxOQ==
+    kind: Secret
+    metadata:
+      creationTimestamp:
+      name: ruby-build-trigger
+    type: Opaque
+

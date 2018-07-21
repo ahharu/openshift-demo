@@ -183,7 +183,7 @@ objects:
       wildcardPolicy: None
   - apiVersion: v1
     stringData:
-      databse-password: larinaga
+      database-password: larinaga
     kind: Secret
     metadata:
       name: redis
@@ -268,6 +268,6 @@ objects:
       ports:
       - port: 6379
         targetPort: 6379
-        name: rubyharu-6379
+        name: redisharu-6379
       selector:
-        deploymentConfig: rubyharu
+        deploymentConfig: redisharu

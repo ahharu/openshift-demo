@@ -108,7 +108,7 @@ objects:
           name: "${RUBY_APP_NAME}:latest"
       resources: {}
   - apiVersion: v1
-    data:
+    stringData:
       WebHookSecretKey: "${TRIGGER_SECRET_RUBY}"
     kind: Secret
     metadata:

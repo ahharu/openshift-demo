@@ -1,0 +1,295 @@
+---
+apiVersion: v1
+kind: Template
+metadata:
+  name: redis-ruby-template
+  annotations:
+    description: "Description"
+    iconClass: "icon-redis"
+    tags: "redis,ruby"
+labels:
+  application: "redis-ruby-haru"
+  createdBy: "ahharu"
+parameters:
+  - description: The name for the ruby application.
+    name: RUBY_APP_NAME
+    value: rubyharu
+  - description: The name for the redis application.
+    name: REDIS_APP_NAME
+    value: redisharu
+  - description: The name for the project.
+    name: PROJECT_NAME
+    value: boom1
+  - description: Redis trigger secret
+    name: TRIGGER_SECRET_REDIS
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - description: Ruby trigger secret
+    name: TRIGGER_SECRET_RUBY
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+  - description: Redis Password
+    name: REDIS_PASSWORD
+    from: "[a-zA-Z0-9]{8}"
+    generate: expression
+objects:
+  - apiVersion: v1
+    kind: ImageStream
+    metadata:
+      creationTimestamp:
+      generation: 1
+      name: "${REDIS_APP_NAME}"
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: redis-build
+      creationTimestamp:
+      labels:
+        name: redis-build
+    spec:
+      source:
+        type: Git
+        git:
+          uri: git://github.com/ahharu/openshift-demo
+          ref: master
+        contextDir: projects/redis
+      strategy:
+        type: Docker
+        dockerStrategy:
+      triggers:
+        - github:
+            secretReference:
+              name: redis-build-trigger
+          type: GitHub
+      output:
+        to:
+          kind: ImageStreamTag
+          name: "${REDIS_APP_NAME}:latest"
+      resources: {}
+  - apiVersion: v1
+    stringData:
+      WebHookSecretKey: "${TRIGGER_SECRET_REDIS}"
+    kind: Secret
+    metadata:
+      creationTimestamp:
+      name: redis-build-trigger
+    type: Opaque
+  - apiVersion: v1
+    kind: ImageStream
+    metadata:
+      creationTimestamp:
+      generation: 1
+      name: "${RUBY_APP_NAME}"
+  - kind: BuildConfig
+    apiVersion: v1
+    metadata:
+      name: ruby-build
+      creationTimestamp:
+      labels:
+        name: ruby-build
+    spec:
+      source:
+        type: Git
+        git:
+          uri: git://github.com/ahharu/openshift-demo
+          ref: master
+        contextDir: projects/ruby-app
+      strategy:
+        type: Docker
+        dockerStrategy:
+      triggers:
+        - github:
+            secretReference:
+              name: ruby-build-trigger
+          type: GitHub
+      output:
+        to:
+          kind: ImageStreamTag
+          name: "${RUBY_APP_NAME}:latest"
+      resources: {}
+  - apiVersion: v1
+    data:
+      WebHookSecretKey: "${TRIGGER_SECRET_RUBY}"
+    kind: Secret
+    metadata:
+      creationTimestamp:
+      name: ruby-build-trigger
+    type: Opaque
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: "${RUBY_APP_NAME}"
+      labels:
+        deploymentConfig: "${RUBY_APP_NAME}"
+    spec:
+      replicas: 2
+      selector:
+        deploymentConfig: "${RUBY_APP_NAME}"
+      strategy:
+        activeDeadlineSeconds: 21600
+        resources: {}
+        rollingParams:
+          intervalSeconds: 1
+          maxSurge: 25%
+          maxUnavailable: 25%
+          timeoutSeconds: 600
+          updatePeriodSeconds: 1
+        type: Rolling
+      template:
+        metadata:
+          labels:
+            deploymentConfig: "${RUBY_APP_NAME}"
+          name: "${RUBY_APP_NAME}"
+        spec:
+          containers:
+            - name: "${RUBY_APP_NAME}"
+              image: "${RUBY_APP_NAME}"
+              imagePullPolicy: Always
+              env:
+                - name: REDIS_HOST
+                  value: "${REDIS_APP_NAME}.${PROJECT_NAME}.svc"
+                - name: REDIS_PORT
+                  value: '6379'
+                - name: REDIS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-password
+                      name: redis
+              ports:
+                - name: "${RUBY_APP_NAME}-http"
+                  containerPort: 4567
+                  protocol: TCP
+              resources: {}
+              terminationMessagePath: "/dev/termination-log"
+              securityContext:
+                capabilities: {}
+                privileged: false
+          restartPolicy: Always
+          dnsPolicy: ClusterFirst
+      triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+          - "${RUBY_APP_NAME}"
+          from:
+            kind: ImageStreamTag
+            name: "${RUBY_APP_NAME}:latest"
+      - type: ConfigChange
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: "${RUBY_APP_NAME}"
+    spec:
+      ports:
+      - port: 4567
+        targetPort: 4567
+        name: "${RUBY_APP_NAME}-4567"
+      selector:
+        deploymentConfig: "${RUBY_APP_NAME}"
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: "${RUBY_APP_NAME}"
+      annotations:
+        kubernetes.io/tls-acme: "true"
+    spec:
+      port:
+        targetPort: "${RUBY_APP_NAME}-4567"
+      to:
+        kind: Service
+        name: "${RUBY_APP_NAME}"
+        weight: 100
+      wildcardPolicy: None
+  - apiVersion: v1
+    stringData:
+      database-password: "${REDIS_PASSWORD}"
+    kind: Secret
+    metadata:
+      name: redis
+    type: Opaque
+
+  - kind: DeploymentConfig
+    apiVersion: v1
+    metadata:
+      name: "${REDIS_APP_NAME}"
+      labels:
+        deploymentConfig: "${REDIS_APP_NAME}"
+    spec:
+      replicas: 1
+      selector:
+        deploymentConfig: "${REDIS_APP_NAME}"
+      strategy:
+        activeDeadlineSeconds: 21600
+        recreateParams:
+          timeoutSeconds: 600
+        resources: {}
+        type: Recreate
+      template:
+        metadata:
+          labels:
+            deploymentConfig: "${REDIS_APP_NAME}"
+          name: "${REDIS_APP_NAME}"
+        spec:
+          containers:
+            - name: "${REDIS_APP_NAME}"
+              image: "${REDIS_APP_NAME}"
+              imagePullPolicy: Always
+              ports:
+                - name: "${REDIS_APP_NAME}-port"
+                  containerPort: 6379
+                  protocol: TCP
+              resources: {}
+              terminationMessagePath: "/dev/termination-log"
+              env:
+                - name: REDIS_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      key: database-password
+                      name: redis
+              securityContext:
+                capabilities: {}
+                privileged: false
+              volumeMounts:
+                - mountPath: /data
+                  name: redis-data
+              readinessProbe:
+                exec:
+                  command:
+                    - /bin/sh
+                    - '-i'
+                    - '-c'
+                    - >-
+                      test "$(redis-cli -h 127.0.0.1 -a $REDIS_PASSWORD ping)" ==
+                      "PONG"
+                failureThreshold: 3
+                initialDelaySeconds: 5
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+          restartPolicy: Always
+          dnsPolicy: ClusterFirst
+          volumes:
+            - emptyDir: {}
+              name: redis-data
+      triggers:
+      - type: ImageChange
+        imageChangeParams:
+          automatic: true
+          containerNames:
+          - "${REDIS_APP_NAME}"
+          from:
+            kind: ImageStreamTag
+            name: "${REDIS_APP_NAME}:latest"
+      - type: ConfigChange
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: "${REDIS_APP_NAME}"
+    spec:
+      ports:
+      - port: 6379
+        targetPort: 6379
+        name: "${REDIS_APP_NAME}-6379"
+      selector:
+        deploymentConfig: "${REDIS_APP_NAME}"

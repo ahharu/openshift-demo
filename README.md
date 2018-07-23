@@ -86,8 +86,10 @@ In the example..
 
 Run the command
 
-`oc describe bc/redis-build`
-`oc describe bc/ruby-build`
+```
+oc describe bc/redis-build
+oc describe bc/ruby-build
+```
 
 Get the secrets...
 
